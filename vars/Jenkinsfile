@@ -1,0 +1,53 @@
+@Library("Shared") _
+pipeline {
+    agent { label 'vinod' }
+
+    stages {
+        stage("Hello"){
+            steps{
+                script{
+                    hello()
+                }
+            }
+        }
+        stage('Clone Repository') {
+    steps {
+        script {
+            clone("https://github.com/Nikhilsingh9889/nginx-docker.git", "main")
+        }
+    }
+}
+
+        stage('Build Image') {
+            steps {
+                sh 'docker build -t nginx:latest .'
+            }
+        }
+
+        stage('Push to Dockerhub') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerHub',
+                    passwordVariable: 'dockerHubPass',
+                    usernameVariable: 'dockerHubUser'
+                )]) {
+                    sh '''
+                        docker login -u $dockerHubUser -p $dockerHubPass
+                        docker image tag nginx:latest $dockerHubUser/nginx:latest
+                        docker push $dockerHubUser/nginx:latest
+                    '''
+                }
+            }
+        }
+
+        stage('Run Container') {
+            steps {
+                sh '''
+                    docker-compose down || true
+                    docker-compose pull
+                    docker-compose up -d
+                '''
+            }
+        }
+    }
+}
