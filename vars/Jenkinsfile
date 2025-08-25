@@ -1,4 +1,3 @@
-# This is written by me
 @Library("Shared") _
 pipeline {
     agent { label 'vinod' }
